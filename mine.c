@@ -7,11 +7,35 @@
 #define MINES_COUNT 10
 #define SIZE 9
 
+// Define colors;
+#define COLOR_0 0
+#define COLOR_1 4
+#define COLOR_2 2
+#define COLOR_3 1
+#define COLOR_4 8 
+#define COLOR_5 9
+#define COLOR_6 10
+#define COLOR_7 5
+#define COLOR_8 7
+#define COLOR_CELL 3
+#define COLOR_FLAG 5
+int colors[] = {
+   COLOR_0,
+   COLOR_1,
+   COLOR_2,
+   COLOR_3,
+   COLOR_4,
+   COLOR_5,
+   COLOR_6,
+   COLOR_7,
+   COLOR_8,
+   COLOR_CELL,
+   COLOR_FLAG,
+};
 
 void fill_mines();
 void fill_mines_around(int height, int width);
 void render();
-void debug();
 void fill_open(int height, int width);
 int make_move();
 int fill_flaged(int row, int col);
@@ -37,7 +61,6 @@ cell field[SIZE][SIZE];
 int main(void)
 {   
     //Initialize the field
-    bool win_conditon;
     int not_mined_cells = (SIZE*SIZE) - MINES_COUNT;
     srand(time(NULL));
     fill_mines();
@@ -52,12 +75,29 @@ int main(void)
 
     // Game cycle
     initscr();
+    if(has_colors() == FALSE)
+	{	endwin();
+		printf("Your terminal does not support color\n");
+		exit(1);
+	}
+    start_color();
+
+    // Color pairs
+    init_color(8, 0, 0, 500);
+    init_color(9, 300, 0, 0);
+    init_color(10, 0, 1000, 1000);
+    for (int i = 0; i < 11; i++)
+    {
+        init_pair(i, colors[i], COLOR_BLACK);
+    }
+
     noecho();
     keypad(stdscr, 1);
     int row_buff, col_buff = 0;
     render();
     move(0, 0);
 
+    //Game cycle
     while(true)
     {
         if(make_move())
@@ -157,8 +197,7 @@ int make_move()
         
         if(field[row][col].open == true)
         {
-            int mined = fill_flaged(row, col);
-            if(mined)
+            if(fill_flaged(row, col))
             {
                 return 1;
             }
@@ -206,12 +245,14 @@ int fill_flaged(int row, int col)
                 return 1;
             }
 
-            if(field[i][j].open == false)
+            if(field[i][j].open == false & field[i][j].flag == false)
             {
-                fill_open(i, j);
+                field[i][j].open = true;
+                if(field[i][j].mines_around == 0)
+                {
+                    fill_open(i, j);
+                }
             }
-            
-
         }
     }
     return 0;
@@ -322,17 +363,23 @@ void render()
             move(i, j);
             if (field[i][j].open)
             {
+                attron(COLOR_PAIR(field[i][j].mines_around));
                 printw("%i ",field[i][j].mines_around);
+                attroff(COLOR_PAIR(field[i][j].mines_around));
             }
             else
             {
                 if(field[i][j].flag)
                 {
+                    attron(COLOR_PAIR(10));
                     printw("F");
+                    attroff(COLOR_PAIR(10));
                 }
                 else
                 {
-                    printw("# ");
+                    attron(COLOR_PAIR(9));
+                    printw("#");
+                    attroff(COLOR_PAIR(9));
                 }
             }
         }
