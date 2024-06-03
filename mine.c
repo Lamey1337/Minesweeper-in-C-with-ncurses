@@ -121,9 +121,10 @@ int main(int argc, char const *argv[])
     init_color(8, 0, 0, 500);
     init_color(9, 300, 0, 0);
     init_color(10, 0, 1000, 1000);
-    for (int i = 0; i < 11; i++)
+
+    for (int i = 1; i <= 11; i++)
     {
-        init_pair(i, colors[i], COLOR_BLACK);
+        init_pair(i, colors[i-1], COLOR_BLACK);
     }
 
     noecho();
@@ -417,25 +418,25 @@ void render()
             move(i, j);
             if (field[i][j].open)
             {
-                attron(COLOR_PAIR(field[i][j].mines_around));
-                printw("%i ",field[i][j].mines_around);
-                attroff(COLOR_PAIR(field[i][j].mines_around));
+                attron(COLOR_PAIR(field[i][j].mines_around+1));
+                printw((field[i][j].mines_around == 0) ? " " : "%i",field[i][j].mines_around);
+                attroff(COLOR_PAIR(field[i][j].mines_around+1));
                 continue;
             }
             else
             {
                 if(field[i][j].flag)
                 {
-                    attron(COLOR_PAIR(10));
+                    attron(COLOR_PAIR(11));
                     printw("F");
-                    attroff(COLOR_PAIR(10));
+                    attroff(COLOR_PAIR(11));
                     continue;
                 }
                 else
                 {
-                    attron(COLOR_PAIR(9));
+                    attron(COLOR_PAIR(10));
                     printw("#");
-                    attroff(COLOR_PAIR(9));
+                    attroff(COLOR_PAIR(10));
                 }
             }
         }
@@ -451,16 +452,17 @@ void render_end()
             move(i, j);
             if(field[i][j].mined)
             {
-                attron(COLOR_PAIR(10));
+                attron(COLOR_PAIR(11));
                 printw("*");
-                attroff(COLOR_PAIR(10));
+                attroff(COLOR_PAIR(11));
                 continue;
             }
             else
             {
-                attron(COLOR_PAIR(field[i][j].mines_around));
-                printw("%i", field[i][j].mines_around);
-                attroff(COLOR_PAIR(field[i][j].mines_around));
+                attron(COLOR_PAIR(field[i][j].mines_around+1));
+                printw((field[i][j].mines_around == 0) ? " " : "%i",field[i][j].mines_around);
+                printw((field[i][j].mines_around == 0) ? " " : "%i",field[i][j].mines_around);
+                attroff(COLOR_PAIR(field[i][j].mines_around+1));
                 continue;
             }
         }
