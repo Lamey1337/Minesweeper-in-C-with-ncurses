@@ -118,7 +118,7 @@ int main(int argc, char const *argv[])
     start_color();
 
     // Color pairs
-    init_color(8, 0, 0, 500);
+    init_color(8, 1000, 500, 200);
     init_color(9, 300, 0, 0);
     init_color(10, 0, 1000, 1000);
 
