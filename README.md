@@ -1,5 +1,7 @@
 Install ncurses first then use make
 
+Usage: ./mine -[difficulty] (easy, normal, hard)
+
 Controls:
 
   arrow keys: movement
