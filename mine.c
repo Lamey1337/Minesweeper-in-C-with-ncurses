@@ -3,9 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <ncurses.h>
-
-#define MINES_COUNT 10
-#define SIZE 9
+#include <string.h>
 
 // Define colors;
 #define COLOR_0 0
@@ -33,14 +31,18 @@ int colors[] = {
    COLOR_FLAG,
 };
 
+//Prototypes
 void fill_mines();
-void fill_mines_around(int height, int width);
+void fill_mines_around(int row, int col);
 void render();
-void fill_open(int height, int width);
+void fill_open(int row, int col);
 int make_move();
 int fill_flaged(int row, int col);
 int contains_flag(int row, int col);
 int check_win(int not_mined_cells);
+void render_end();
+void malloc_field();
+void free_field();
 
 typedef struct
 {
@@ -56,24 +58,57 @@ typedef struct
     int width;
 } coardinates;
 
-cell field[SIZE][SIZE];
+//Global variables
+cell **field;
+int height, width, size, mines_count;
 
-int main(void)
+int main(int argc, char const *argv[])
 {   
+    //Choose difficulty
+    if(argc != 2)
+    {
+        printf("Usage: ./mine -[difficulty] (easy, normal, hard)");
+        return 1;
+    }
+    if(strcmp(argv[1], "-easy") == 0)
+    {
+        height = 9;
+        width = 9;
+        mines_count = 10;
+    }
+    else if(strcmp(argv[1], "-normal") == 0)
+    {
+        height = 16;
+        width = 16;
+        mines_count = 40;
+    }
+    else if(strcmp(argv[1], "-hard") == 0)
+    {
+        height = 16;
+        width = 30;
+        mines_count = 99;
+    }
+    else
+    {
+        printf("Usage: ./mine -[difficulty] (easy, normal, hard)");
+        return 1;
+    }
+
     //Initialize the field
-    int not_mined_cells = (SIZE*SIZE) - MINES_COUNT;
+    size = height*width;
+    int not_mined_cells = (size) - mines_count;
+    malloc_field();
     srand(time(NULL));
     fill_mines();
     
-    for(int i = 0; i < SIZE; i++)
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < SIZE; j++)
+        for(int j = 0; j < width; j++)
         {
             fill_mines_around(i, j);
         }
     }
 
-    // Game cycle
     initscr();
     if(has_colors() == FALSE)
 	{	endwin();
@@ -103,8 +138,8 @@ int main(void)
         if(make_move())
         {
             clear();
-            move(0, 0);
-            printw("You lose!");
+            render_end();
+            printw("You lost!");
             getch();
             break;
         }
@@ -112,7 +147,7 @@ int main(void)
         if(check_win(not_mined_cells))
         {
             clear();
-            move(0, 0);
+            render_end();
             printw("You won!");
             getch();
             break;
@@ -123,16 +158,35 @@ int main(void)
         move(row_buff, col_buff);
     }
     endwin();
-
-
+    free_field();
 }
+
+void malloc_field()
+{
+    field = (cell**)malloc(height * sizeof(cell*));
+    for(int i = 0; i < height; i++)
+    {
+        field[i] = (cell*)malloc(width * sizeof(cell));
+    }
+}
+
+void free_field()
+{
+    for(int i = 0; i < height; i++)
+    {
+        free(field[i]);
+    }
+
+    free(field);
+}
+
 
 int check_win(int not_mined_cells)
 {
     int count = 0;
-    for(int i = 0; i < SIZE; i++)
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < SIZE; j++)
+        for(int j = 0; j < width; j++)
         {
             if(field[i][j].open)
             {
@@ -161,7 +215,7 @@ int make_move()
 
     if(input == KEY_DOWN)
     {
-        if(row+1 <= 8)
+        if(row+1 < height)
         {
             move(row+1, col);
         }
@@ -176,7 +230,7 @@ int make_move()
 
     if(input == KEY_RIGHT)
     {
-        if(col+1 <= 8)
+        if(col+1 < width)
         {
             move(row, col + 1);
         }
@@ -235,7 +289,7 @@ int fill_flaged(int row, int col)
     {
         for(int j = col-1; j < col+2; j++)
         {
-            if(i < 0 || j < 0 || i >= SIZE || j >= SIZE)
+            if(i < 0 || j < 0 || i >= height || j >= width)
             {
                 continue;
             }
@@ -268,7 +322,7 @@ int contains_flag(int row, int col)
     {
         for(int j = col-1; j < col+2; j++)
         {
-            if(i < 0 || j < 0 || i >= SIZE || j >= SIZE)
+            if(i < 0 || j < 0 || i >= height || j >= width)
             {
                 continue;
             }
@@ -290,14 +344,14 @@ int contains_flag(int row, int col)
 
 void fill_mines()
 {   
-    int len = SIZE * SIZE;
+    int len = size;
     coardinates unused[len];
     int ind = 0;
-    int mines = MINES_COUNT;
+    int mines = mines_count;
 
-    for(int i = 0; i < SIZE; i++)
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < SIZE; j++)
+        for(int j = 0; j < width; j++)
         {
             unused[ind].height = i;
             unused[ind].width = j;
@@ -331,15 +385,15 @@ void fill_mines()
    
 }
 
-void fill_mines_around(int height, int width)
+void fill_mines_around(int row, int col)
 {
     int count = 0;
 
-    for(int i = height-1; i < height+2; i++)
+    for(int i = row-1; i < row+2; i++)
     {
-        for(int j = width-1; j < width+2; j++)
+        for(int j = col-1; j < col+2; j++)
         {
-            if(i < 0 || j < 0 || i >= SIZE || j >= SIZE)
+            if(i < 0 || j < 0 || i >= height || j >= width)
             {
                 continue;
             }
@@ -351,14 +405,14 @@ void fill_mines_around(int height, int width)
         }
     }
 
-    field[height][width].mines_around = count;
+    field[row][col].mines_around = count;
 }
 
 void render()
 {   
-    for(int i = 0; i < SIZE; i++)
+    for(int i = 0; i < height; i++)
     {   
-        for(int j = 0; j < SIZE; j++)
+        for(int j = 0; j < width; j++)
         {
             move(i, j);
             if (field[i][j].open)
@@ -366,6 +420,7 @@ void render()
                 attron(COLOR_PAIR(field[i][j].mines_around));
                 printw("%i ",field[i][j].mines_around);
                 attroff(COLOR_PAIR(field[i][j].mines_around));
+                continue;
             }
             else
             {
@@ -374,6 +429,7 @@ void render()
                     attron(COLOR_PAIR(10));
                     printw("F");
                     attroff(COLOR_PAIR(10));
+                    continue;
                 }
                 else
                 {
@@ -386,13 +442,43 @@ void render()
     }
 }
 
-void fill_open(int height, int width)
+void render_end()
 {
-    for(int i = height-1; i < height+2; i++)
-    {
-        for(int j = width-1; j < width+2; j++)
+    for(int i = 0; i < height; i++)
+    {   
+        for(int j = 0; j < width; j++)
         {
-            if(i < 0 || j < 0 || i >= SIZE || j >= SIZE)
+            move(i, j);
+            if(field[i][j].mined)
+            {
+                attron(COLOR_PAIR(10));
+                printw("*");
+                attroff(COLOR_PAIR(10));
+                continue;
+            }
+            else
+            {
+                attron(COLOR_PAIR(field[i][j].mines_around));
+                printw("%i", field[i][j].mines_around);
+                attroff(COLOR_PAIR(field[i][j].mines_around));
+                continue;
+            }
+        }
+    }
+
+    int row, col;
+    getyx(stdscr, row, col);
+    row++;
+    move(row, 0);
+}
+
+void fill_open(int row, int col)
+{
+    for(int i = row-1; i < row+2; i++)
+    {
+        for(int j = col-1; j < col+2; j++)
+        {
+            if(i < 0 || j < 0 || i >= height || j >= width)
             {
                 continue;
             }
